@@ -1,0 +1,530 @@
+﻿IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110205635_InitialCreate'
+)
+BEGIN
+    CREATE TABLE [MONITORING_POINT] (
+        [ID_POINT] int NOT NULL IDENTITY,
+        [STREET] nvarchar(150) NOT NULL,
+        [STREET_NUMBER] nvarchar(10) NULL,
+        [NEIGHBORHOOD] nvarchar(80) NULL,
+        [CITY] nvarchar(100) NOT NULL,
+        [STATE] nchar(2) NOT NULL,
+        [LATITUDE] decimal(9,6) NOT NULL,
+        [LONGITUDE] decimal(9,6) NOT NULL,
+        [DESCRIPTION] nvarchar(200) NULL,
+        CONSTRAINT [PK_MONITORING_POINT] PRIMARY KEY ([ID_POINT])
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110205635_InitialCreate'
+)
+BEGIN
+    CREATE TABLE [CAMERA] (
+        [ID_CAMERA] int NOT NULL IDENTITY,
+        [CAMERA_CODE] nvarchar(30) NOT NULL,
+        [DESCRIPTION] nvarchar(200) NULL,
+        [STATUS] nvarchar(20) NOT NULL,
+        [INSTALLATION_DATE] date NULL,
+        [ID_POINT] int NOT NULL,
+        CONSTRAINT [PK_CAMERA] PRIMARY KEY ([ID_CAMERA]),
+        CONSTRAINT [FK_CAMERA_MONITORING_POINT_ID_POINT] FOREIGN KEY ([ID_POINT]) REFERENCES [MONITORING_POINT] ([ID_POINT]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110205635_InitialCreate'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_CAMERA_CAMERA_CODE] ON [CAMERA] ([CAMERA_CODE]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110205635_InitialCreate'
+)
+BEGIN
+    CREATE INDEX [IX_CAMERA_ID_POINT] ON [CAMERA] ([ID_POINT]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110205635_InitialCreate'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261110205635_InitialCreate', N'8.0.34');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110213219_AddReferenceTables'
+)
+BEGIN
+    CREATE TABLE [ISSUE_TYPE] (
+        [ID_ISSUE_TYPE] int NOT NULL IDENTITY,
+        [NAME] nvarchar(100) NOT NULL,
+        [CATEGORY] nvarchar(30) NOT NULL,
+        [DESCRIPTION] nvarchar(200) NULL,
+        [IS_ACTIVE] bit NOT NULL,
+        CONSTRAINT [PK_ISSUE_TYPE] PRIMARY KEY ([ID_ISSUE_TYPE])
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110213219_AddReferenceTables'
+)
+BEGIN
+    CREATE TABLE [MUNICIPAL_AGENCY] (
+        [ID_AGENCY] int NOT NULL IDENTITY,
+        [NAME] nvarchar(150) NOT NULL,
+        [DESCRIPTION] nvarchar(200) NULL,
+        [CITY] nvarchar(100) NOT NULL,
+        [STATE] nchar(2) NOT NULL,
+        [IS_ACTIVE] bit NOT NULL,
+        [SUBPREFECTURE] nvarchar(100) NULL,
+        CONSTRAINT [PK_MUNICIPAL_AGENCY] PRIMARY KEY ([ID_AGENCY])
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110213219_AddReferenceTables'
+)
+BEGIN
+    CREATE TABLE [TRIGGER_EVENT] (
+        [ID_EVENT] int NOT NULL IDENTITY,
+        [EVENT_TYPE] nvarchar(30) NOT NULL,
+        [DESCRIPTION] nvarchar(200) NULL,
+        [INTENSITY] nvarchar(50) NULL,
+        [ALERT_SOURCE] nvarchar(100) NOT NULL,
+        [START_DATE] datetime2 NOT NULL,
+        [END_DATE] datetime2 NULL,
+        [STATUS] nvarchar(20) NOT NULL,
+        CONSTRAINT [PK_TRIGGER_EVENT] PRIMARY KEY ([ID_EVENT])
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110213219_AddReferenceTables'
+)
+BEGIN
+    CREATE TABLE [TEAM] (
+        [ID_TEAM] int NOT NULL IDENTITY,
+        [NAME] nvarchar(100) NOT NULL,
+        [DESCRIPTION] nvarchar(200) NULL,
+        [IS_ACTIVE] bit NOT NULL,
+        [ID_AGENCY] int NOT NULL,
+        CONSTRAINT [PK_TEAM] PRIMARY KEY ([ID_TEAM]),
+        CONSTRAINT [FK_TEAM_MUNICIPAL_AGENCY_ID_AGENCY] FOREIGN KEY ([ID_AGENCY]) REFERENCES [MUNICIPAL_AGENCY] ([ID_AGENCY]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110213219_AddReferenceTables'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_ISSUE_TYPE_NAME] ON [ISSUE_TYPE] ([NAME]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110213219_AddReferenceTables'
+)
+BEGIN
+    CREATE INDEX [IX_TEAM_ID_AGENCY] ON [TEAM] ([ID_AGENCY]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110213219_AddReferenceTables'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261110213219_AddReferenceTables', N'8.0.34');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    CREATE TABLE [CAPTURE_SCHEDULE] (
+        [ID_SCHEDULE] int NOT NULL IDENTITY,
+        [ID_CAMERA] int NOT NULL,
+        [WEEKDAY] nvarchar(10) NULL,
+        [EXECUTION_TIME] time NOT NULL,
+        [START_DATE] date NOT NULL,
+        [END_DATE] date NULL,
+        [IS_ACTIVE] bit NOT NULL,
+        CONSTRAINT [PK_CAPTURE_SCHEDULE] PRIMARY KEY ([ID_SCHEDULE]),
+        CONSTRAINT [FK_CAPTURE_SCHEDULE_CAMERA_ID_CAMERA] FOREIGN KEY ([ID_CAMERA]) REFERENCES [CAMERA] ([ID_CAMERA]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    CREATE TABLE [CAPTURE] (
+        [ID_CAPTURE] int NOT NULL IDENTITY,
+        [SOURCE] nvarchar(20) NOT NULL,
+        [CAPTURE_DATE] datetime2 NOT NULL,
+        [STATUS] nvarchar(20) NOT NULL,
+        [LATITUDE] decimal(9,6) NULL,
+        [LONGITUDE] decimal(9,6) NULL,
+        [ID_CAMERA] int NULL,
+        [ID_SCHEDULE] int NULL,
+        [ID_EVENT] int NULL,
+        [ID_USER] nvarchar(100) NULL,
+        CONSTRAINT [PK_CAPTURE] PRIMARY KEY ([ID_CAPTURE]),
+        CONSTRAINT [FK_CAPTURE_CAMERA_ID_CAMERA] FOREIGN KEY ([ID_CAMERA]) REFERENCES [CAMERA] ([ID_CAMERA]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_CAPTURE_CAPTURE_SCHEDULE_ID_SCHEDULE] FOREIGN KEY ([ID_SCHEDULE]) REFERENCES [CAPTURE_SCHEDULE] ([ID_SCHEDULE]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_CAPTURE_TRIGGER_EVENT_ID_EVENT] FOREIGN KEY ([ID_EVENT]) REFERENCES [TRIGGER_EVENT] ([ID_EVENT]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    CREATE TABLE [IMAGE] (
+        [ID_IMAGE] int NOT NULL IDENTITY,
+        [ID_CAPTURE] int NOT NULL,
+        [FILE_NAME] nvarchar(255) NOT NULL,
+        [FILE_PATH] nvarchar(500) NOT NULL,
+        [FILE_HASH] nchar(64) NULL,
+        [STORAGE_DATE] datetime2 NOT NULL,
+        CONSTRAINT [PK_IMAGE] PRIMARY KEY ([ID_IMAGE]),
+        CONSTRAINT [FK_IMAGE_CAPTURE_ID_CAPTURE] FOREIGN KEY ([ID_CAPTURE]) REFERENCES [CAPTURE] ([ID_CAPTURE]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    CREATE INDEX [IX_CAPTURE_ID_EVENT] ON [CAPTURE] ([ID_EVENT]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    CREATE INDEX [IX_CAPTURE_ID_SCHEDULE] ON [CAPTURE] ([ID_SCHEDULE]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [UX_CAPTURE_CAMERA_DATE] ON [CAPTURE] ([ID_CAMERA], [CAPTURE_DATE]) WHERE [ID_CAMERA] IS NOT NULL');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    CREATE INDEX [IX_CAPTURE_SCHEDULE_ID_CAMERA] ON [CAPTURE_SCHEDULE] ([ID_CAMERA]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    CREATE INDEX [IX_IMAGE_ID_CAPTURE] ON [IMAGE] ([ID_CAPTURE]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110220521_AddCaptureTables'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261110220521_AddCaptureTables', N'8.0.34');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE TABLE [AI_ANALYSIS] (
+        [ID_ANALYSIS] int NOT NULL IDENTITY,
+        [ID_IMAGE] int NOT NULL,
+        [AI_MODEL] nvarchar(100) NOT NULL,
+        [MODEL_VERSION] nvarchar(50) NULL,
+        [STATUS] nvarchar(20) NOT NULL,
+        [ANALYSIS_DATE] datetime2 NOT NULL,
+        [PROCESSING_TIME_MS] int NULL,
+        CONSTRAINT [PK_AI_ANALYSIS] PRIMARY KEY ([ID_ANALYSIS]),
+        CONSTRAINT [FK_AI_ANALYSIS_IMAGE_ID_IMAGE] FOREIGN KEY ([ID_IMAGE]) REFERENCES [IMAGE] ([ID_IMAGE]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE TABLE [ISSUE_REPORT] (
+        [ID_ISSUE_REPORT] int NOT NULL IDENTITY,
+        [TITLE] nvarchar(150) NOT NULL,
+        [DESCRIPTION] nvarchar(1000) NULL,
+        [SOURCE] nvarchar(20) NOT NULL,
+        [SEVERITY] nvarchar(20) NULL,
+        [STATUS] nvarchar(20) NOT NULL,
+        [OPENING_DATE] datetime2 NOT NULL,
+        [RESOLUTION_DATE] datetime2 NULL,
+        [LEVEL] int NULL,
+        [SIDE] nvarchar(10) NULL,
+        [ID_ISSUE_TYPE] int NOT NULL,
+        [ID_USER] nvarchar(100) NULL,
+        CONSTRAINT [PK_ISSUE_REPORT] PRIMARY KEY ([ID_ISSUE_REPORT]),
+        CONSTRAINT [FK_ISSUE_REPORT_ISSUE_TYPE_ID_ISSUE_TYPE] FOREIGN KEY ([ID_ISSUE_TYPE]) REFERENCES [ISSUE_TYPE] ([ID_ISSUE_TYPE]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE TABLE [AI_DETECTION] (
+        [ID_DETECTION] int NOT NULL IDENTITY,
+        [ID_ANALYSIS] int NOT NULL,
+        [ID_ISSUE_TYPE] int NOT NULL,
+        [CONFIDENCE_SCORE] decimal(5,4) NULL,
+        [ESTIMATED_SEVERITY] nvarchar(20) NULL,
+        [DETECTION_COORDINATES] nvarchar(100) NULL,
+        [DESCRIPTION] nvarchar(1000) NULL,
+        [ID_ISSUE_REPORT] int NULL,
+        CONSTRAINT [PK_AI_DETECTION] PRIMARY KEY ([ID_DETECTION]),
+        CONSTRAINT [FK_AI_DETECTION_AI_ANALYSIS_ID_ANALYSIS] FOREIGN KEY ([ID_ANALYSIS]) REFERENCES [AI_ANALYSIS] ([ID_ANALYSIS]) ON DELETE CASCADE,
+        CONSTRAINT [FK_AI_DETECTION_ISSUE_REPORT_ID_ISSUE_REPORT] FOREIGN KEY ([ID_ISSUE_REPORT]) REFERENCES [ISSUE_REPORT] ([ID_ISSUE_REPORT]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_AI_DETECTION_ISSUE_TYPE_ID_ISSUE_TYPE] FOREIGN KEY ([ID_ISSUE_TYPE]) REFERENCES [ISSUE_TYPE] ([ID_ISSUE_TYPE]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE TABLE [ISSUE_ASSIGNMENT] (
+        [ID_ASSIGNMENT] int NOT NULL IDENTITY,
+        [ID_ISSUE_REPORT] int NOT NULL,
+        [ID_TEAM] int NOT NULL,
+        [ASSIGNMENT_DATE] datetime2 NOT NULL,
+        [CLOSING_DATE] datetime2 NULL,
+        CONSTRAINT [PK_ISSUE_ASSIGNMENT] PRIMARY KEY ([ID_ASSIGNMENT]),
+        CONSTRAINT [FK_ISSUE_ASSIGNMENT_ISSUE_REPORT_ID_ISSUE_REPORT] FOREIGN KEY ([ID_ISSUE_REPORT]) REFERENCES [ISSUE_REPORT] ([ID_ISSUE_REPORT]) ON DELETE CASCADE,
+        CONSTRAINT [FK_ISSUE_ASSIGNMENT_TEAM_ID_TEAM] FOREIGN KEY ([ID_TEAM]) REFERENCES [TEAM] ([ID_TEAM]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE TABLE [ISSUE_HISTORY] (
+        [ID_HISTORY] int NOT NULL IDENTITY,
+        [ID_ISSUE_REPORT] int NOT NULL,
+        [PREVIOUS_STATUS] nvarchar(20) NULL,
+        [NEW_STATUS] nvarchar(20) NOT NULL,
+        [NOTES] nvarchar(500) NULL,
+        [CHANGE_DATE] datetime2 NOT NULL,
+        [ID_USER] nvarchar(100) NULL,
+        CONSTRAINT [PK_ISSUE_HISTORY] PRIMARY KEY ([ID_HISTORY]),
+        CONSTRAINT [FK_ISSUE_HISTORY_ISSUE_REPORT_ID_ISSUE_REPORT] FOREIGN KEY ([ID_ISSUE_REPORT]) REFERENCES [ISSUE_REPORT] ([ID_ISSUE_REPORT]) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE INDEX [IX_AI_ANALYSIS_ID_IMAGE] ON [AI_ANALYSIS] ([ID_IMAGE]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE INDEX [IX_AI_DETECTION_ID_ANALYSIS] ON [AI_DETECTION] ([ID_ANALYSIS]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE INDEX [IX_AI_DETECTION_ID_ISSUE_REPORT] ON [AI_DETECTION] ([ID_ISSUE_REPORT]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE INDEX [IX_AI_DETECTION_ID_ISSUE_TYPE] ON [AI_DETECTION] ([ID_ISSUE_TYPE]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE INDEX [IX_ISSUE_ASSIGNMENT_ID_TEAM] ON [ISSUE_ASSIGNMENT] ([ID_TEAM]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [UX_ISSUE_ASSIGNMENT_OPEN] ON [ISSUE_ASSIGNMENT] ([ID_ISSUE_REPORT]) WHERE [CLOSING_DATE] IS NULL');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE INDEX [IX_ISSUE_HISTORY_ID_ISSUE_REPORT] ON [ISSUE_HISTORY] ([ID_ISSUE_REPORT]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    CREATE INDEX [IX_ISSUE_REPORT_ID_ISSUE_TYPE] ON [ISSUE_REPORT] ([ID_ISSUE_TYPE]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261110223654_AddAnalysisAndIssueTables'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261110223654_AddAnalysisAndIssueTables', N'8.0.34');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111161051_AddIdempotencyRecord'
+)
+BEGIN
+    CREATE TABLE [IDEMPOTENCY_RECORD] (
+        [IDEMPOTENCY_KEY] nvarchar(100) NOT NULL,
+        [REQUEST_HASH] nchar(64) NOT NULL,
+        [STATUS_CODE] int NULL,
+        [RESPONSE_BODY] nvarchar(max) NULL,
+        [CREATED_AT] datetime2 NOT NULL,
+        CONSTRAINT [PK_IDEMPOTENCY_RECORD] PRIMARY KEY ([IDEMPOTENCY_KEY])
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261111161051_AddIdempotencyRecord'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261111161051_AddIdempotencyRecord', N'8.0.34');
+END;
+GO
+
+COMMIT;
+GO
+

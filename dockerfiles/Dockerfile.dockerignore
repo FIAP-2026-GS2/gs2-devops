@@ -1,0 +1,24 @@
+# .dockerignore do dockerfiles/Dockerfile (o BuildKit lê o arquivo <Dockerfile>.dockerignore).
+# Os caminhos são relativos ao contexto do build: a pasta gs2-dotnet/.
+
+# Saídas de build
+**/bin/
+**/obj/
+**/out/
+
+# Segredos e configuração local
+**/.env
+**/appsettings.Development.json
+**/*.user
+**/secrets.json
+
+# O que a imagem não usa
+tests/
+docs/
+.config/
+.vs/
+.vscode/
+.git/
+**/*.md
+docker-compose.yml
+integrantes.txt

@@ -1,0 +1,3 @@
+# Scripts de shell sempre com LF: com CRLF, o bash do agente Linux falha com "$'\r': command not found".
+*.sh text eol=lf
+.env.example text eol=lf

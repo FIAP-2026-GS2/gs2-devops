@@ -91,7 +91,8 @@ else
     az container create --name "$ACI" --resource-group "$RG" --location "$AZ_LOCATION" \
         --image mcr.microsoft.com/azuredocs/aci-helloworld:latest --os-type Linux \
         --cpu 0.5 --memory 1 --ports 80 --ip-address Public --dns-name-label "$ACI_DNS" \
-        --restart-policy Always --tags "${TAGS[@]}" -o none
+        --restart-policy Always -o none
+    # Sem --tags: o "az container create" não aceita essa opção (a Release recria o container).
     ok "criado"
 fi
 

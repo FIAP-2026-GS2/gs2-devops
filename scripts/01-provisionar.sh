@@ -86,9 +86,11 @@ if existe az container show --name "$ACI" --resource-group "$RG"; then
 else
     # Imagem pública de exemplo da Microsoft, só para o recurso e o DNS existirem.
     # A primeira Release recria o container com a imagem da API, na porta 8080.
+    # 0,5 vCPU e 1 GB: o ACI cobra por segundo de CPU e memória, e a API cabe nisso
+    # (metade do custo de 1 vCPU e 1,5 GB; o crédito da assinatura de estudante é limitado).
     az container create --name "$ACI" --resource-group "$RG" --location "$AZ_LOCATION" \
         --image mcr.microsoft.com/azuredocs/aci-helloworld:latest --os-type Linux \
-        --cpu 1 --memory 1.5 --ports 80 --ip-address Public --dns-name-label "$ACI_DNS" \
+        --cpu 0.5 --memory 1 --ports 80 --ip-address Public --dns-name-label "$ACI_DNS" \
         --restart-policy Always --tags "${TAGS[@]}" -o none
     ok "criado"
 fi

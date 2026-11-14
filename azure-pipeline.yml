@@ -124,6 +124,14 @@ stages:
               targetPath: scripts/script-bd.sql
               artifact: db
 
+          # Scripts que a Release executa (deploy no ACI e smoke test). Vão no artefato para a
+          # Release usar a mesma versão do código que gerou este build.
+          - task: PublishPipelineArtifact@1
+            displayName: Publicar artefato release (scripts de deploy)
+            inputs:
+              targetPath: scripts/release
+              artifact: release
+
   - stage: Imagem
     displayName: Imagem Docker no ACR
     dependsOn: Build

@@ -1,0 +1,12 @@
+# Segredos dos scripts de infraestrutura (copie de scripts/.env.example)
+scripts/.env
+
+# Saídas locais de build e testes
+out/
+TestResults/
+*.trx
+
+# Editores
+.vs/
+.vscode/
+.idea/

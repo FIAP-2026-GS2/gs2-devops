@@ -1,0 +1,157 @@
+# CI do SampaTech (Azure Pipelines, YAML).
+# Roda sozinho a cada commit na main. Como a main é protegida, todo commit nela chega por
+# merge de PR: o build acontece "somente após o merge na main via PR" (requisito 04).
+# A Release (clássica) é disparada pelos artefatos desta pipeline e faz o deploy no ACI.
+
+trigger:
+  branches:
+    include:
+      - main
+
+# No Azure Repos, a validação de PR seria uma branch policy (Build Validation), que não usamos.
+pr: none
+
+pool:
+  # Versão fixa do agente: o rótulo ubuntu-latest está migrando para o Ubuntu 26 (aviso nas runs),
+  # e a troca não pode acontecer no meio da entrega. A 24.04 tem o Docker que o Testcontainers usa.
+  vmImage: ubuntu-24.04
+
+variables:
+  buildConfiguration: Release
+  appDir: gs2-dotnet                       # a API .NET fica nesta subpasta
+  testResultsDir: $(Agent.TempDirectory)/TestResults
+  # Imagem Docker: enviada ao ACR criado pelo scripts/01-provisionar.sh
+  acrServiceConnection: sc-acr-sampatech   # service connection do tipo Docker Registry
+  imageRepository: sampatech-api
+  dockerfilePath: dockerfiles/Dockerfile
+  imageTag: $(Build.BuildId)               # cada build gera uma tag única, usada pela Release
+
+stages:
+  - stage: Build
+    displayName: Build e testes
+    jobs:
+      - job: BuildTest
+        displayName: Compilar, testar e empacotar
+        steps:
+          - task: UseDotNet@2
+            displayName: Instalar o SDK do .NET (versão do global.json)
+            inputs:
+              useGlobalJson: true
+              workingDirectory: $(appDir)
+
+          - script: dotnet restore SampaTech.sln
+            displayName: Restaurar pacotes
+            workingDirectory: $(appDir)
+
+          - script: dotnet build SampaTech.sln -c $(buildConfiguration) --no-restore
+            displayName: Compilar a solução
+            workingDirectory: $(appDir)
+
+          # Os testes rodam pelo bash (as aspas do "XPlat Code Coverage" chegam intactas) e geram
+          # um .trx (relatório do xUnit) por projeto. A publicação vem nas tarefas seguintes.
+          - script: >
+              dotnet test tests/SampaTech.UnitTests/SampaTech.UnitTests.csproj
+              -c $(buildConfiguration) --no-build
+              --logger trx --results-directory "$(testResultsDir)/unit"
+              --collect "XPlat Code Coverage"
+            displayName: Testes de unidade (xUnit)
+            workingDirectory: $(appDir)
+
+          - script: >
+              dotnet test tests/SampaTech.IntegrationTests/SampaTech.IntegrationTests.csproj
+              -c $(buildConfiguration) --no-build
+              --logger trx --results-directory "$(testResultsDir)/integration"
+              --collect "XPlat Code Coverage"
+            displayName: Testes de integração (xUnit + SQL Server em Testcontainers)
+            workingDirectory: $(appDir)
+            condition: succeededOrFailed()   # roda mesmo se algum teste de unidade falhar
+
+          # succeededOrFailed: publica o relatório também quando um teste falha (é quando ele mais importa).
+          - task: PublishTestResults@2
+            displayName: Publicar resultados dos testes de unidade
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: VSTest
+              testResultsFiles: $(testResultsDir)/unit/*.trx
+              testRunTitle: Testes de unidade
+              failTaskOnFailedTests: true
+
+          - task: PublishTestResults@2
+            displayName: Publicar resultados dos testes de integração
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: VSTest
+              testResultsFiles: $(testResultsDir)/integration/*.trx
+              testRunTitle: Testes de integração
+              failTaskOnFailedTests: true
+
+          - task: PublishCodeCoverageResults@2
+            displayName: Publicar a cobertura de código
+            inputs:
+              summaryFileLocation: $(testResultsDir)/**/coverage.cobertura.xml
+
+          # O script-bd.sql do repositório precisa bater com as migrations do código.
+          # Se alguém criar uma migration e esquecer de gerar o script, o CI falha aqui.
+          - script: |
+              set -euo pipefail
+              dotnet tool restore
+              ConnectionStrings__DefaultConnection="Server=x;Database=SampaTech;User Id=x;Password=x;TrustServerCertificate=True" \
+                dotnet ef migrations script --idempotent --no-build --configuration $(buildConfiguration) \
+                --project src/SampaTech.Infrastructure --startup-project src/SampaTech.Api \
+                -o "$(Agent.TempDirectory)/script-gerado.sql"
+              if diff -q <(tr -d '\r' < ../scripts/script-bd.sql) <(tr -d '\r' < "$(Agent.TempDirectory)/script-gerado.sql") >/dev/null; then
+                echo "script-bd.sql confere com as migrations."
+              else
+                echo "##vso[task.logissue type=error]scripts/script-bd.sql está desatualizado: gere de novo com dotnet ef migrations script --idempotent."
+                exit 1
+              fi
+            displayName: Conferir o script-bd.sql com as migrations
+            workingDirectory: $(appDir)
+
+          - script: dotnet publish src/SampaTech.Api/SampaTech.Api.csproj -c $(buildConfiguration) --no-build -o $(Build.ArtifactStagingDirectory)/api
+            displayName: Gerar o pacote da API (dotnet publish)
+            workingDirectory: $(appDir)
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publicar artefato api (pacote)
+            inputs:
+              targetPath: $(Build.ArtifactStagingDirectory)/api
+              artifact: api
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publicar artefato db (script-bd.sql)
+            inputs:
+              targetPath: scripts/script-bd.sql
+              artifact: db
+
+  - stage: Imagem
+    displayName: Imagem Docker no ACR
+    dependsOn: Build
+    jobs:
+      - job: Docker
+        displayName: Build e push da imagem
+        steps:
+          - task: Docker@2
+            displayName: Build e push para o ACR
+            inputs:
+              command: buildAndPush
+              containerRegistry: $(acrServiceConnection)
+              repository: $(imageRepository)
+              Dockerfile: $(dockerfilePath)
+              buildContext: $(appDir)
+              tags: |
+                $(imageTag)
+                latest
+
+          # A Release lê este arquivo para saber exatamente qual imagem publicar no ACI.
+          - script: |
+              mkdir -p "$(Build.ArtifactStagingDirectory)/imagem"
+              echo "$(imageRepository):$(imageTag)" > "$(Build.ArtifactStagingDirectory)/imagem/imagem.txt"
+              cat "$(Build.ArtifactStagingDirectory)/imagem/imagem.txt"
+            displayName: Registrar a tag da imagem
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publicar artefato imagem (tag)
+            inputs:
+              targetPath: $(Build.ArtifactStagingDirectory)/imagem
+              artifact: imagem

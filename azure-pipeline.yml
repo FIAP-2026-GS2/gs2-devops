@@ -12,7 +12,9 @@ trigger:
 pr: none
 
 pool:
-  vmImage: ubuntu-latest   # tem Docker, que os testes de integração (Testcontainers) precisam
+  # Versão fixa do agente: o rótulo ubuntu-latest está migrando para o Ubuntu 26 (aviso nas runs),
+  # e a troca não pode acontecer no meio da entrega. A 24.04 tem o Docker que o Testcontainers usa.
+  vmImage: ubuntu-24.04
 
 variables:
   buildConfiguration: Release

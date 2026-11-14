@@ -45,23 +45,43 @@ stages:
             displayName: Compilar a solução
             workingDirectory: $(appDir)
 
-          - task: DotNetCoreCLI@2
+          # Os testes rodam pelo bash (as aspas do "XPlat Code Coverage" chegam intactas) e geram
+          # um .trx (relatório do xUnit) por projeto. A publicação vem nas tarefas seguintes.
+          - script: >
+              dotnet test tests/SampaTech.UnitTests/SampaTech.UnitTests.csproj
+              -c $(buildConfiguration) --no-build
+              --logger trx --results-directory "$(testResultsDir)/unit"
+              --collect "XPlat Code Coverage"
             displayName: Testes de unidade (xUnit)
-            inputs:
-              command: test
-              projects: $(appDir)/tests/SampaTech.UnitTests/SampaTech.UnitTests.csproj
-              arguments: -c $(buildConfiguration) --no-build --collect "XPlat Code Coverage" --results-directory $(testResultsDir)
-              publishTestResults: true
-              testRunTitle: Testes de unidade
+            workingDirectory: $(appDir)
 
-          - task: DotNetCoreCLI@2
+          - script: >
+              dotnet test tests/SampaTech.IntegrationTests/SampaTech.IntegrationTests.csproj
+              -c $(buildConfiguration) --no-build
+              --logger trx --results-directory "$(testResultsDir)/integration"
+              --collect "XPlat Code Coverage"
             displayName: Testes de integração (xUnit + SQL Server em Testcontainers)
+            workingDirectory: $(appDir)
+            condition: succeededOrFailed()   # roda mesmo se algum teste de unidade falhar
+
+          # succeededOrFailed: publica o relatório também quando um teste falha (é quando ele mais importa).
+          - task: PublishTestResults@2
+            displayName: Publicar resultados dos testes de unidade
+            condition: succeededOrFailed()
             inputs:
-              command: test
-              projects: $(appDir)/tests/SampaTech.IntegrationTests/SampaTech.IntegrationTests.csproj
-              arguments: -c $(buildConfiguration) --no-build --collect "XPlat Code Coverage" --results-directory $(testResultsDir)
-              publishTestResults: true
+              testResultsFormat: VSTest
+              testResultsFiles: $(testResultsDir)/unit/*.trx
+              testRunTitle: Testes de unidade
+              failTaskOnFailedTests: true
+
+          - task: PublishTestResults@2
+            displayName: Publicar resultados dos testes de integração
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: VSTest
+              testResultsFiles: $(testResultsDir)/integration/*.trx
               testRunTitle: Testes de integração
+              failTaskOnFailedTests: true
 
           - task: PublishCodeCoverageResults@2
             displayName: Publicar a cobertura de código
